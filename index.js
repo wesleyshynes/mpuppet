@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 
 var laBidders = {}
 
-async function openPage(url,time){
+async function liveAuctioneersBidders(url,time){
 	const browser = await puppeteer.launch({
 		headless: false,
 		args: [
@@ -35,24 +35,27 @@ async function openPage(url,time){
 	
 	await page.waitFor(time)
 	
-	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html')
+	//await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html')
+	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=1&s=approved')
 	
-	await page.waitFor(() => document.querySelectorAll('.tab2_left_unsel').length)
+	/*await page.waitFor(() => document.querySelectorAll('.tab2_left_unsel').length)
 	
 	await page.evaluate(()=>{
-		document.querySelectorAll('.tab2_left_unsel')[0].click()
-	})
-	
-	await page.waitFor(() => document.querySelectorAll('#bList .bidder').length)
+		//let approvedLink = [...document.querySelectorAll('.tab2_left_unsel')].filter(x=> x.innerHTML.indexOf('Approved')>-1)
+		//approvedLink[0].click()
+		if(AMC_ONBCONSOLEPAGE){_Cstatus="1";_Cpage=1;$(".tab2_left_sel").attr("class","tab2_left_unsel"); $(this).attr("class","tab2_left_sel");loadBTdata();return false};
+	})*/
+
+	await page.waitFor(() => document.querySelectorAll('#bList .bidder').length,{timeout: 60000})
 	
 	await page.evaluate(()=>{
 		document.querySelectorAll('.name a')[0].click()
 	})
 	let anotherOne = false
 	let count = 0
-	while(!anotherOne && count < 10){
+	while(!anotherOne && count < 5){
 		await page.waitFor(() => document.querySelectorAll('h3').length)
-		console.log('counter ' + count)
+		//console.log('counter ' + count)
 		await page.waitFor(time)
 		let bidderInfo = await page.evaluate(()=>{
 			let bidderInfo = {}
@@ -62,7 +65,7 @@ async function openPage(url,time){
 			for(let i = 2; i < bidderTable.length && bidderTable[i].id!='paddle_row'; i+=2){
 				bidderInfo[bidderTable[i].childNodes[1].innerText.replace(':','')] = bidderTable[i].childNodes[3].innerText
 			}
-			console.log(bidderInfo)
+			//console.log(bidderInfo)
 			return bidderInfo
 		})
 		laBidders[bidderInfo.Username] = bidderInfo
@@ -78,9 +81,20 @@ async function openPage(url,time){
 	}
 		
 	console.log(laBidders)
-	//await page.waitFor(time)
-	//await browser.close()
+	
+	await page.waitFor(time)
+	await browser.close()
 	
 }
 
-openPage('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',3000)
+async function invaluableBidders(url,time){
+	//[...document.getElementsByClassName('pendingBidderLink')].filter(x=> x.href.indexOf('approvalID')>-1)
+	//[...document.getElementsByTagName('td')].map( x=>{ if(x.innerText.indexOf('Personal Information')>-1 && x.innerHTML.indexOf('<td>')==-1)console.log(x.innerText.split('\n'))} )
+}
+
+liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',3000)
+
+
+
+
+
