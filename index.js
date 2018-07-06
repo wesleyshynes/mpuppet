@@ -34,10 +34,10 @@ async function liveAuctioneersBidders(url,time){
 	})
 	
 	await page.waitFor(time)
+		
+	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=1&s=approved')
 	
 	//await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html')
-	
-	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=1&s=approved')
 	
 	/*await page.waitFor(() => document.querySelectorAll('.tab2_left_unsel').length)
 	
@@ -105,6 +105,9 @@ async function liveAuctioneersBidders(url,time){
 async function invaluableBidders(url,time){
 	//[...document.getElementsByClassName('pendingBidderLink')].filter(x=> x.href.indexOf('approvalID')>-1)
 	//[...document.getElementsByTagName('td')].map( x=>{ if(x.innerText.indexOf('Personal Information')>-1 && x.innerHTML.indexOf('<td>')==-1)console.log(x.innerText.split('\n'))} )
+	
+	// DROPDOWN SELECTOR
+	//await page.select('#telCountryInput', 'my-value')
 }
 
 liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',2000)
