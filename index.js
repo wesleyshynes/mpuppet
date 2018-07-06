@@ -36,6 +36,7 @@ async function liveAuctioneersBidders(url,time){
 	await page.waitFor(time)
 	
 	//await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html')
+	
 	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=1&s=approved')
 	
 	/*await page.waitFor(() => document.querySelectorAll('.tab2_left_unsel').length)
@@ -46,40 +47,54 @@ async function liveAuctioneersBidders(url,time){
 		if(AMC_ONBCONSOLEPAGE){_Cstatus="1";_Cpage=1;$(".tab2_left_sel").attr("class","tab2_left_unsel"); $(this).attr("class","tab2_left_sel");loadBTdata();return false};
 	})*/
 
-	await page.waitFor(() => document.querySelectorAll('#bList .bidder').length,{timeout: 60000})
+	await page.waitFor(() => document.querySelectorAll('.other_pages').length)
 	
-	await page.evaluate(()=>{
-		document.querySelectorAll('.name a')[0].click()
+	let bidderPages = await page.evaluate(()=>{
+		let paginationList = [...document.querySelectorAll('.other_pages')]
+		return paginationList.pop().innerText
 	})
-	let anotherOne = false
-	let count = 0
-	while(!anotherOne && count < 5){
-		await page.waitFor(() => document.querySelectorAll('h3').length)
-		//console.log('counter ' + count)
-		await page.waitFor(time)
-		let bidderInfo = await page.evaluate(()=>{
-			let bidderInfo = {}
-			let bidderName = document.querySelectorAll('#bList h3')[0].innerText
-			bidderInfo.name = bidderName
-			let bidderTable = document.querySelectorAll('#bList table table')[1].childNodes[1].childNodes
-			for(let i = 2; i < bidderTable.length && bidderTable[i].id!='paddle_row'; i+=2){
-				bidderInfo[bidderTable[i].childNodes[1].innerText.replace(':','')] = bidderTable[i].childNodes[3].innerText
-			}
-			//console.log(bidderInfo)
-			return bidderInfo
-		})
-		laBidders[bidderInfo.Username] = bidderInfo
-		await page.waitFor(time)
-		//console.log(laBidders)
-		anotherOne = await page.evaluate(()=>document.getElementById('profile_next').disabled)
-		if(!anotherOne){
-			await page.evaluate(()=>{
-				document.getElementById('profile_next').click()
-			})
-		}
-		count++
-	}
+	
+	//for(let i = 1; i <= bidderPages; i++){
+	for(let i = 1; i <= 3; i++){
 		
+		console.log('GOING TO NEXT PAGE')
+		await page.goto(`http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=${i}&s=approved`)
+		
+		await page.waitFor(() => document.querySelectorAll('.other_pages').length)
+		
+		await page.evaluate(()=>{
+			document.querySelectorAll('.name a')[0].click()
+		})
+		let anotherOne = false
+		let count = 0
+		while(!anotherOne && count < 50){
+			await page.waitFor(() => document.querySelectorAll('h3').length)
+			console.log('counter ' + count)
+			await page.waitFor(time)
+			let bidderInfo = await page.evaluate(()=>{
+				let bidderInfo = {}
+				let bidderName = document.querySelectorAll('#bList h3')[0].innerText
+				bidderInfo.name = bidderName
+				let bidderTable = document.querySelectorAll('#bList table table')[1].childNodes[1].childNodes
+				for(let i = 2; i < bidderTable.length && bidderTable[i].id!='paddle_row'; i+=2){
+					bidderInfo[bidderTable[i].childNodes[1].innerText.replace(':','')] = bidderTable[i].childNodes[3].innerText
+				}
+				//console.log(bidderInfo)
+				return bidderInfo
+			})
+			laBidders[bidderInfo.Username] = bidderInfo
+			await page.waitFor(time)
+			//console.log(laBidders)
+			anotherOne = await page.evaluate(()=>document.getElementById('profile_next').disabled)
+			if(!anotherOne){
+				await page.evaluate(()=>{
+					document.getElementById('profile_next').click()
+				})
+			}
+			count++
+		}
+	}
+	
 	console.log(laBidders)
 	
 	await page.waitFor(time)
@@ -92,7 +107,7 @@ async function invaluableBidders(url,time){
 	//[...document.getElementsByTagName('td')].map( x=>{ if(x.innerText.indexOf('Personal Information')>-1 && x.innerHTML.indexOf('<td>')==-1)console.log(x.innerText.split('\n'))} )
 }
 
-liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',3000)
+liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',2000)
 
 
 
