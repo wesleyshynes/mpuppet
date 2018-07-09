@@ -1,5 +1,6 @@
 require('dotenv').config()
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 var laBidders = {}
 
@@ -54,10 +55,10 @@ async function liveAuctioneersBidders(url,time){
 		return paginationList.pop().innerText
 	})
 	
-	//for(let i = 1; i <= bidderPages; i++){
-	for(let i = 1; i <= 3; i++){
+	for(let i = 1; i <= bidderPages; i++){
+	//for(let i = 1; i <= 1; i++){
 		
-		console.log('GOING TO NEXT PAGE')
+		console.log(' ====== STARTING PAGE ' + i)
 		await page.goto(`http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=${i}&s=approved`)
 		
 		await page.waitFor(() => document.querySelectorAll('.other_pages').length)
@@ -73,18 +74,39 @@ async function liveAuctioneersBidders(url,time){
 			await page.waitFor(time)
 			let bidderInfo = await page.evaluate(()=>{
 				let bidderInfo = {}
-				let bidderName = document.querySelectorAll('#bList h3')[0].innerText
+				let bidderName = document.querySelectorAll('#bList h3')[0].innerText.replace(/,/g,' ')
 				bidderInfo.name = bidderName
+				
+				//console.log('Got bidder Name ' + bidderName)
+				
 				let bidderTable = document.querySelectorAll('#bList table table')[1].childNodes[1].childNodes
 				for(let i = 2; i < bidderTable.length && bidderTable[i].id!='paddle_row'; i+=2){
-					bidderInfo[bidderTable[i].childNodes[1].innerText.replace(':','')] = bidderTable[i].childNodes[3].innerText
+					let fieldTitle = bidderTable[i].childNodes[1].innerText.replace(':','')
+					let fieldData = bidderTable[i].childNodes[3].innerText
+					if(fieldTitle == 'Address'){
+						fieldData = fieldData.split('\n')
+						bidderInfo['Address'] = fieldData[0].replace(/,/g,'-')
+						let cityStateZipCountry = fieldData.pop().split(',').map(x=>x.trim())
+						for(let j = 1; j < fieldData.length; j++){
+							bidderInfo['Address'+(j+1)] = fieldData[j].replace(/,/g,' ')
+						}
+						//cityStateZipCountry[1] = cityStateZipCountry[1].split(' ')
+						bidderInfo['City'] = cityStateZipCountry[0]
+						bidderInfo['Country'] = cityStateZipCountry.pop()
+						let stateZip = cityStateZipCountry.pop().split(' ')
+						bidderInfo['Zip'] = stateZip.pop()
+						bidderInfo['State'] = stateZip.join(' ')
+						
+						continue						
+					}				
+					bidderInfo[fieldTitle] = fieldData.replace(/,/g,';')
 				}
 				//console.log(bidderInfo)
 				return bidderInfo
 			})
 			laBidders[bidderInfo.Username] = bidderInfo
-			await page.waitFor(time)
-			//console.log(laBidders)
+			//await page.waitFor(time)
+			console.log(bidderInfo)
 			anotherOne = await page.evaluate(()=>document.getElementById('profile_next').disabled)
 			if(!anotherOne){
 				await page.evaluate(()=>{
@@ -95,12 +117,36 @@ async function liveAuctioneersBidders(url,time){
 		}
 	}
 	
-	console.log(laBidders)
-	
+	//console.log(laBidders)
+	fs.writeFileSync('D://node/mpuppet/data/live_auctioneers_bidders.json', JSON.stringify(laBidders));
+	fs.writeFileSync('D://node/mpuppet/data/live_auctioneers_bidders.csv', j2c(laBidders));
 	await page.waitFor(time)
 	await browser.close()
 	
 }
+
+
+function j2c(data){
+
+	let headers = ['name','Username','Address','Address2','City','State','Zip','Country','Mobile tel','Tel','Tel 2','Tax ID']
+	let fields = {}
+	headers.forEach(x=>{fields[x]=1})
+	//let headers = []
+	let output = [headers]
+	Object.keys(data).forEach(x=>{
+		Object.keys(data[x]).forEach(y=>{
+			if(!fields[y]){
+				fields[y]=1
+				headers.push(y)
+			}
+		})
+		output.push( headers.map(z=> data[x][z] ? "" + data[x][z] : "" ).join(',') )
+	})
+	output[0] = output[0].join(',')
+	console.log(output)
+	return output.join('\r')
+}
+
 
 async function invaluableBidders(url,time){
 	//[...document.getElementsByClassName('pendingBidderLink')].filter(x=> x.href.indexOf('approvalID')>-1)
