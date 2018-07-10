@@ -4,6 +4,7 @@ const fs = require('fs');
 
 var laBidders = {}
 
+//==== LIVE AUCTIONEERS BIDDERS ======//
 async function liveAuctioneersBidders(url,time){
 	const browser = await puppeteer.launch({
 		headless: false,
@@ -37,16 +38,6 @@ async function liveAuctioneersBidders(url,time){
 	await page.waitFor(time)
 		
 	await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html?o=t&pagenum=1&s=approved')
-	
-	//await page.goto('http://classic.liveauctioneers.com/auctioneers/house-bidders-6087.html')
-	
-	/*await page.waitFor(() => document.querySelectorAll('.tab2_left_unsel').length)
-	
-	await page.evaluate(()=>{
-		//let approvedLink = [...document.querySelectorAll('.tab2_left_unsel')].filter(x=> x.innerHTML.indexOf('Approved')>-1)
-		//approvedLink[0].click()
-		if(AMC_ONBCONSOLEPAGE){_Cstatus="1";_Cpage=1;$(".tab2_left_sel").attr("class","tab2_left_unsel"); $(this).attr("class","tab2_left_sel");loadBTdata();return false};
-	})*/
 
 	await page.waitFor(() => document.querySelectorAll('.other_pages').length)
 	
@@ -147,16 +138,50 @@ function j2c(data){
 	return output.join('\r')
 }
 
-
+//==== INVALUABLE BIDDERS ======//
 async function invaluableBidders(url,time){
+	
+	const browser = await puppeteer.launch({
+		headless: false,
+		args: [
+			'--window-size=1200,800'
+		]
+	})
+	const page = await browser.newPage()
+	page.setViewport({width:1200,height:800})
+	await page.goto(url)
+
+	//await page.waitFor(time)
+	await page.waitFor(() => document.querySelectorAll('#login').length || document.querySelectorAll('#mainMenuFull').length)
+		
+	let loggedIn = await page.evaluate(()=>{
+		if(document.querySelectorAll('#login').length)return false		
+		return true
+	})
+	
+	if(!loggedIn){
+		await page.type('[name=houseName]',process.env.INV_HOUSEID)
+		await page.type('[name=username]',process.env.INV_USER)
+		await page.type('[name=password]',process.env.INV_PASS)
+		await page.evaluate(()=>{
+			document.querySelectorAll('#login .button')[0].click()
+		})
+	}
+	await page.waitFor(time)
+	await page.goto('https://www.invaluableauctions.com/al/bidders/viewBidderGroups.cfm?mode=approvals')
 	//[...document.getElementsByClassName('pendingBidderLink')].filter(x=> x.href.indexOf('approvalID')>-1)
 	//[...document.getElementsByTagName('td')].map( x=>{ if(x.innerText.indexOf('Personal Information')>-1 && x.innerHTML.indexOf('<td>')==-1)console.log(x.innerText.split('\n'))} )
 	
 	// DROPDOWN SELECTOR
 	//await page.select('#telCountryInput', 'my-value')
+	
+	await page.waitFor(time)
+	await browser.close()
 }
 
-liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',2000)
+//liveAuctioneersBidders('https://classic.liveauctioneers.com/user/login.html?url=/auctioneers/',2000)
+
+invaluableBidders('https://www.invaluableauctions.com/index.cfm',2000)
 
 
 
